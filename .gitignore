@@ -1,0 +1,14 @@
+# Temporary Excel files
+~$*.xlsx
+~$*.xls
+
+# OS generated files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Python / IDE cache
+__pycache__/
+*.pyc
+.idea/
+.vscode/
