@@ -12,3 +12,9 @@ __pycache__/
 *.pyc
 .idea/
 .vscode/
+
+# Exclude heavy PDF and DB files from Git
+*.pdf
+*.xlsx
+*.url
+해주오씨_지군사공파_족보_마인드맵_v15.html
