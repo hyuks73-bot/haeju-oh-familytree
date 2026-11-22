@@ -541,7 +541,12 @@
         }
 
         function applyAndCloseTargetModal(targetId) {
-            recalculateDynamicLineage(targetId, false);
+            currentTargetPersonId = targetId;
+            if (isDirectOnly) {
+                rebuildAndRelayoutTree();
+            } else {
+                recalculateDynamicLineage(targetId, false);
+            }
             closeTargetModal();
         }
 
@@ -619,11 +624,12 @@
                 strippedName = nameInput.substring(1).trim();
             }
 
-            const allNodes = rootHierarchy ? rootHierarchy.descendants() : [];
+            const genNumMatch = genInput.match(/\d+/);
+            const allNodes = Array.from(rawNodeMap.values());
             const matches = allNodes.filter(d => {
-                const nHg = d.data.name_hg || '';
-                const nHj = d.data.name_hj || '';
-                const genStr = (d.data.gen || '').toString();
+                const nHg = d.name_hg || '';
+                const nHj = d.name_hj || '';
+                const genStr = (d.gen || '').toString();
 
                 const nameMatch = !nameInput ||
                     nHg.includes(nameInput) ||
@@ -631,7 +637,15 @@
                     nHg.includes(strippedName) ||
                     ('오' + nHg).includes(nameInput);
 
-                const genMatch = !genInput || genStr.includes(genInput) || genStr.includes(genInput.replace('세', ''));
+                let genMatch = true;
+                if (genInput) {
+                    if (genNumMatch) {
+                        const nodeGenMatch = genStr.match(/\d+/);
+                        genMatch = Boolean(nodeGenMatch && nodeGenMatch[0] === genNumMatch[0]);
+                    } else {
+                        genMatch = genStr.includes(genInput);
+                    }
+                }
                 return nameMatch && genMatch;
             });
 
@@ -649,17 +663,17 @@
             }
 
             if (matches.length === 1) {
-                applyAndCloseTargetModal(matches[0].data.id);
+                applyAndCloseTargetModal(matches[0].id);
                 return;
             }
 
             // Multiple Same-Name Candidates: Render Disambiguation Cards safely via DOM API
             candidatesBox.style.display = 'block';
-            matches.forEach(m => {
-                const d = m.data;
+            matches.forEach(d => {
                 const fatherStr = d.father_hg ? `${d.father_hg}(${d.father_hj || ''})` : '시조/상위미상';
-                const childrenList = (m.children || []).map(c => c.data.name_hg).join(', ');
+                const childrenList = (d.children || []).map(c => c.name_hg).join(', ');
                 const childStr = childrenList ? childrenList : '자손 미상/단대';
+                const genLabel = d.gen ? (d.gen.includes('세') ? d.gen : `${d.gen}세`) : '';
 
                 const card = document.createElement('div');
                 card.className = 'candidate-card';
@@ -676,7 +690,7 @@
 
                 const genSpan = document.createElement('span');
                 genSpan.className = 'candidate-gen';
-                genSpan.textContent = `${d.gen || ''}세대`;
+                genSpan.textContent = genLabel;
                 nameDiv.appendChild(genSpan);
 
                 const parentsDiv = document.createElement('div');
